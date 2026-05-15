@@ -3,6 +3,20 @@ import { env } from '../config/env.js';
 
 const { Pool } = pg;
 
+/** Render / Neon и др.: в строке подключения часто sslmode=require */
+function poolSslOption() {
+  const raw = process.env.DATABASE_URL ?? '';
+  if (raw.includes('sslmode=require') || raw.includes('sslmode=prefer')) {
+    return { rejectUnauthorized: false };
+  }
+  if (env.DB_HOST && /render\.com|neon\.tech|supabase\.co/i.test(env.DB_HOST)) {
+    return { rejectUnauthorized: false };
+  }
+  return undefined;
+}
+
+const ssl = poolSslOption();
+
 export const pool = new Pool({
   host: env.DB_HOST,
   port: env.DB_PORT,
@@ -13,6 +27,7 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   application_name: 'agro_erp_local',
+  ...(ssl ? { ssl } : {}),
 });
 
 pool.on('error', (error) => {
