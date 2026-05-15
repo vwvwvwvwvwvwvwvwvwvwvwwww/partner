@@ -39,7 +39,7 @@ Railway подставляет **`PORT`** сам — backend уже читает
 
 - **Build:** `npm install && npm run install:all && npm run build`
 - **Start:** `NODE_ENV=production npm run start --prefix backend`
-- **Pre-deploy:** `NODE_ENV=production npm run migrate` (миграции из `backend/migrations`)
+- **Pre-deploy:** `npm run migrate` (одна команда в массиве — [требование Railway](https://docs.railway.com/deployments/pre-deploy-command); задайте **`NODE_ENV=production`** в Variables сервиса, чтобы совпадало со стартом).
 
 Если первый деплой падает на **Pre-deploy** (например, до появления `DATABASE_URL` или из‑за расширений БД), временно уберите `preDeployCommand` из `railway.json` или выполните миграции один раз в [Railway Shell](https://docs.railway.com/guides/cli#shell), затем верните конфиг.
 
