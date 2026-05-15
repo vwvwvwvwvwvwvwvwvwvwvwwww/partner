@@ -21,7 +21,7 @@ npm run migrate --prefix backend
 
 Обычный **PostgreSQL** на Railway без PostGIS часто **не подходит**. Добавьте шаблон с PostGIS, например [PG 17 + PostGIS](https://railway.com/deploy/postgis-17).
 
-В сервисе **приложения** → **Variables** → **`DATABASE_URL`** → **Reference** на сервис БД → **`DATABASE_URL`**. Подробнее: [Variables](https://docs.railway.com/guides/variables).
+В сервисе **приложения** → **Variables** → **`DATABASE_URL`** → **Reference** на сервис БД → **`DATABASE_URL`**. Подробнее: [Variables](https://docs.railway.com/guides/variables). Если reference не сделан, но в сервис «просочились» стандартные **`PGHOST` / `PGUSER` / `PGPASSWORD` / `PGDATABASE`**, приложение **соберёт** строку подключения само. Надёжнее всё равно задать **`DATABASE_URL`** явно.
 
 ## 3. Переменные (сервис приложения)
 

@@ -3,6 +3,39 @@ import { z } from 'zod';
 
 dotenv.config();
 
+/**
+ * Railway / образы Postgres часто отдают PGHOST, PGUSER, … без одной переменной DATABASE_URL
+ * на веб-сервисе (если не сделали Reference). Собираем URL и дальше парсим как обычно.
+ */
+function applyDatabaseUrlFromPgVars() {
+  if (process.env.DATABASE_URL?.trim()) {
+    return;
+  }
+
+  const host =
+    process.env.PGHOST?.trim() ||
+    process.env.POSTGRES_HOSTNAME?.trim() ||
+    process.env.POSTGRES_HOST?.trim();
+  const user = process.env.PGUSER?.trim() || process.env.POSTGRES_USER?.trim();
+  const password = String(process.env.PGPASSWORD ?? process.env.POSTGRES_PASSWORD ?? '');
+  const database =
+    process.env.PGDATABASE?.trim() ||
+    process.env.POSTGRES_DB?.trim() ||
+    process.env.POSTGRES_DATABASE?.trim();
+  const port =
+    process.env.PGPORT?.trim() ||
+    process.env.POSTGRES_PORT?.trim() ||
+    process.env.POSTGRESQL_PORT?.trim() ||
+    '5432';
+
+  if (!host || !user || !database) {
+    return;
+  }
+
+  const enc = (s) => encodeURIComponent(s);
+  process.env.DATABASE_URL = `postgresql://${enc(user)}:${enc(password)}@${host}:${port}/${enc(database)}`;
+}
+
 /** Render и др. PaaS передают строку подключения вместо отдельных DB_* */
 function applyFromDatabaseUrl() {
   const raw = process.env.DATABASE_URL?.trim();
@@ -31,6 +64,7 @@ function applyFromDatabaseUrl() {
   process.env.DB_PASSWORD = decodeURIComponent(u.password || '');
 }
 
+applyDatabaseUrlFromPgVars();
 applyFromDatabaseUrl();
 
 /** Railway задаёт RAILWAY_PUBLIC_DOMAIN; без APP_ORIGIN CORS ломается в браузере. */
@@ -99,7 +133,7 @@ try {
   env = envSchema.parse(process.env);
 } catch (error) {
   console.error(
-    'Ошибка конфигурации окружения: DATABASE_URL; JWT_SECRET ≥ 32 символов. APP_ORIGIN: задайте вручную или подставится из RAILWAY_PUBLIC_DOMAIN / RENDER_EXTERNAL_URL.',
+    'Ошибка конфигурации окружения. Нужно: (1) строка подключения к Postgres — переменная DATABASE_URL (Reference на БД в Railway) ИЛИ набор PGHOST + PGUSER + PGPASSWORD + PGDATABASE [+ PGPORT]; (2) JWT_SECRET не короче 32 символов. APP_ORIGIN при необходимости подставится из RAILWAY_PUBLIC_DOMAIN / RENDER_EXTERNAL_URL.',
   );
   console.error(error);
   throw error;
