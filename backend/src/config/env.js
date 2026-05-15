@@ -4,12 +4,37 @@ import { z } from 'zod';
 dotenv.config();
 
 /**
- * Railway / образы Postgres часто отдают PGHOST, PGUSER, … без одной переменной DATABASE_URL
- * на веб-сервисе (если не сделали Reference). Собираем URL и дальше парсим как обычно.
+ * Подставляем DATABASE_URL из типичных имён Railway / Render / Docker, если одна строка не задана.
  */
-function applyDatabaseUrlFromPgVars() {
+function ensureDatabaseUrl() {
   if (process.env.DATABASE_URL?.trim()) {
     return;
+  }
+
+  const prismaRaw = process.env.POSTGRES_PRISMA_URL?.trim();
+  if (prismaRaw?.startsWith('prisma+postgres://')) {
+    process.env.DATABASE_URL = prismaRaw.replace(/^prisma\+postgres:\/\//, 'postgresql://');
+    return;
+  }
+
+  const fromAlias = [
+    process.env.DATABASE_PRIVATE_URL,
+    process.env.DATABASE_PUBLIC_URL,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_PRISMA_URL,
+  ];
+  for (const cand of fromAlias) {
+    let t = cand?.trim();
+    if (!t) {
+      continue;
+    }
+    if (t.startsWith('prisma+postgres://')) {
+      t = t.replace(/^prisma\+postgres:\/\//, 'postgresql://');
+    }
+    if (t.startsWith('postgres://') || t.startsWith('postgresql://')) {
+      process.env.DATABASE_URL = t;
+      return;
+    }
   }
 
   const host =
@@ -34,6 +59,28 @@ function applyDatabaseUrlFromPgVars() {
 
   const enc = (s) => encodeURIComponent(s);
   process.env.DATABASE_URL = `postgresql://${enc(user)}:${enc(password)}@${host}:${port}/${enc(database)}`;
+}
+
+function logDatabaseEnvDiagnostics() {
+  const set = (k) => Boolean(process.env[k]?.toString().trim());
+  const jwtOk = (process.env.JWT_SECRET?.length ?? 0) >= 32;
+  // eslint-disable-next-line no-console
+  console.error('Проверка переменных (true = задано непустое, без вывода значений):', {
+    DATABASE_URL: set('DATABASE_URL'),
+    DATABASE_PRIVATE_URL: set('DATABASE_PRIVATE_URL'),
+    DATABASE_PUBLIC_URL: set('DATABASE_PUBLIC_URL'),
+    POSTGRES_URL: set('POSTGRES_URL'),
+    POSTGRES_PRISMA_URL: set('POSTGRES_PRISMA_URL'),
+    PGHOST: set('PGHOST'),
+    PGUSER: set('PGUSER'),
+    PGDATABASE: set('PGDATABASE'),
+    PGPASSWORD: set('PGPASSWORD'),
+    JWT_SECRET_length_ok: jwtOk,
+  });
+  // eslint-disable-next-line no-console
+  console.error(
+    'В Railway у сервиса приложения добавьте: Variable DATABASE_URL → Reference → ваш Postgres → DATABASE_URL (см. https://docs.railway.com/guides/variables ). И JWT_SECRET ≥ 32 символов.',
+  );
 }
 
 /** Render и др. PaaS передают строку подключения вместо отдельных DB_* */
@@ -64,7 +111,7 @@ function applyFromDatabaseUrl() {
   process.env.DB_PASSWORD = decodeURIComponent(u.password || '');
 }
 
-applyDatabaseUrlFromPgVars();
+ensureDatabaseUrl();
 applyFromDatabaseUrl();
 
 /** Railway задаёт RAILWAY_PUBLIC_DOMAIN; без APP_ORIGIN CORS ломается в браузере. */
@@ -133,8 +180,9 @@ try {
   env = envSchema.parse(process.env);
 } catch (error) {
   console.error(
-    'Ошибка конфигурации окружения. Нужно: (1) строка подключения к Postgres — переменная DATABASE_URL (Reference на БД в Railway) ИЛИ набор PGHOST + PGUSER + PGPASSWORD + PGDATABASE [+ PGPORT]; (2) JWT_SECRET не короче 32 символов. APP_ORIGIN при необходимости подставится из RAILWAY_PUBLIC_DOMAIN / RENDER_EXTERNAL_URL.',
+    'Ошибка конфигурации окружения. Нужны подключение к Postgres и JWT_SECRET ≥ 32 символов.',
   );
+  logDatabaseEnvDiagnostics();
   console.error(error);
   throw error;
 }
