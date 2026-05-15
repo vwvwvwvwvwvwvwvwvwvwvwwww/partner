@@ -1,6 +1,6 @@
 # Деплой на [Railway](https://railway.com) (из GitHub)
 
-В корне репозитория **`railway.json`**: сборка фронта, старт из каталога `backend/`, `healthcheck` на **`/health`** (дублируется **`/api/health`**). Конфиг: [Config as Code](https://docs.railway.com/reference/config-as-code).
+В корне репозитория **`railway.json`**: сборка и старт. **Путь healthcheck в файле не задан** — Railway не будет останавливать деплой на шаге «Network → Healthcheck» (эту проверку при желании можно включить в UI сервиса позже). Конфиг: [Config as Code](https://docs.railway.com/reference/config-as-code).
 
 **Миграции БД** в `railway.json` **не запускаются автоматически** (чтобы деплой не падал на pre-deploy). Один раз после первого успешного деплоя выполните в [Shell](https://docs.railway.com/guides/cli#shell) сервиса приложения из **корня репозитория**:
 
@@ -39,6 +39,7 @@ npm run migrate --prefix backend
 
 - **Build:** `npm install && npm run install:all && npm run build`
 - **Start:** `NODE_ENV=production node backend/src/server.js` (из корня репозитория; путь к `frontend/dist` ищется от расположения `app.js`, не от `cwd`)
+- **Healthcheck:** в репозитории **не задан** — деплой не блокируется на Network. После выката откройте в браузере `/health` или `/api/health`. При необходимости добавьте проверку в настройках сервиса на Railway.
 
 ## 5. Проверка
 
