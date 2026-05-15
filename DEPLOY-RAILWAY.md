@@ -39,9 +39,9 @@ Railway подставляет **`PORT`** сам — backend уже читает
 
 - **Build:** `npm install && npm run install:all && npm run build`
 - **Start:** `NODE_ENV=production npm run start --prefix backend`
-- **Pre-deploy:** `npm run migrate` (одна команда в массиве — [требование Railway](https://docs.railway.com/deployments/pre-deploy-command); задайте **`NODE_ENV=production`** в Variables сервиса, чтобы совпадало со стартом).
+- **Pre-deploy:** `npm run migrate --prefix backend` (одна строка в массиве). Убедитесь, что у **этого же** сервиса в Variables есть **`DATABASE_URL`** (reference на Postgres/PostGIS).
 
-Если первый деплой падает на **Pre-deploy** (например, до появления `DATABASE_URL` или из‑за расширений БД), временно уберите `preDeployCommand` из `railway.json` или выполните миграции один раз в [Railway Shell](https://docs.railway.com/guides/cli#shell), затем верните конфиг. Для самого скрипта `migrate.js` **реальный `JWT_SECRET` не обязателен** (в коде подставляется плейсхолдер только на время миграции); для **работы API** по-прежнему задайте `JWT_SECRET` в Variables.
+Если первый деплой падает на **Pre-deploy**, откройте **View logs** у шага pre-deploy (там текст ошибки PostgreSQL / `DATABASE_URL` / Zod). Проверьте, что **`DATABASE_URL`** добавлен именно в сервис **приложения** (reference на БД). Временно можно **удалить** ключ `preDeployCommand` из `railway.json`, задеплоить, затем один раз в [Shell](https://docs.railway.com/guides/cli#shell): `npm run migrate --prefix backend`. Для самого `migrate.js` **реальный `JWT_SECRET` не обязателен**; для **API** задайте `JWT_SECRET` в Variables.
 
 ## 5. Проверка
 

@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "NODE_ENV=production npm run start --prefix backend",
-    "preDeployCommand": ["npm run migrate"],
+    "preDeployCommand": ["npm run migrate --prefix backend"],
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE"

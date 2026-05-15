@@ -41,7 +41,10 @@ function isMigrateCli() {
   return p.endsWith('src/scripts/migrate.js') || p.endsWith('/scripts/migrate.js');
 }
 
-if (isMigrateCli() && (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 32)) {
+const isMigrateContext =
+  process.env.AGRO_ERP_MIGRATE_SCRIPT === '1' || isMigrateCli();
+
+if (isMigrateContext && (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 32)) {
   process.env.JWT_SECRET = MIGRATE_JWT_PLACEHOLDER;
 }
 
