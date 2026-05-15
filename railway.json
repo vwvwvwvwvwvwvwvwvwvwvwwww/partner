@@ -5,8 +5,7 @@
     "buildCommand": "npm install && npm run install:all && npm run build"
   },
   "deploy": {
-    "startCommand": "NODE_ENV=production npm run start --prefix backend",
-    "preDeployCommand": ["npm run migrate --prefix backend"],
+    "startCommand": "cd backend && NODE_ENV=production node src/server.js",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE"

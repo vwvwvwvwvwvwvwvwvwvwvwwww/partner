@@ -33,6 +33,20 @@ function applyFromDatabaseUrl() {
 
 applyFromDatabaseUrl();
 
+/** Railway задаёт RAILWAY_PUBLIC_DOMAIN; без APP_ORIGIN CORS ломается в браузере. */
+function applyAppOriginFromRailway() {
+  if (process.env.APP_ORIGIN?.trim()) {
+    return;
+  }
+  const host = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (!host) {
+    return;
+  }
+  process.env.APP_ORIGIN = /^https?:\/\//i.test(host) ? host : `https://${host}`;
+}
+
+applyAppOriginFromRailway();
+
 /** Скрипт миграций не использует JWT; в pre-deploy (Railway и др.) JWT_SECRET часто не задан — не блокируем migrate. */
 const MIGRATE_JWT_PLACEHOLDER = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
@@ -71,7 +85,7 @@ try {
   env = envSchema.parse(process.env);
 } catch (error) {
   console.error(
-    'Ошибка конфигурации окружения: задайте DATABASE_URL (Render → Link Database) или полный набор DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD. JWT_SECRET ≥ 32 символов.',
+    'Ошибка конфигурации окружения: DATABASE_URL; JWT_SECRET ≥ 32 символов. На Railway APP_ORIGIN подставится из RAILWAY_PUBLIC_DOMAIN, если не задан.',
   );
   console.error(error);
   throw error;

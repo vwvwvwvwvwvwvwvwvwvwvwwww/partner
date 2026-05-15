@@ -1,56 +1,53 @@
 # Деплой на [Railway](https://railway.com) (из GitHub)
 
-В корне репозитория есть **`railway.json`**: сборка фронта, миграции перед стартом, `healthcheck` на `/api/health`. Подробности по конфигу в коде: [Config as Code](https://docs.railway.com/reference/config-as-code).
+В корне репозитория **`railway.json`**: сборка фронта, старт из каталога `backend/`, `healthcheck` на `/api/health`. Конфиг: [Config as Code](https://docs.railway.com/reference/config-as-code).
+
+**Миграции БД** в `railway.json` **не запускаются автоматически** (чтобы деплой не падал на pre-deploy). Один раз после первого успешного деплоя выполните в [Shell](https://docs.railway.com/guides/cli#shell) сервиса приложения из **корня репозитория**:
+
+```bash
+npm run migrate --prefix backend
+```
+
+(Либо `cd backend && npm run migrate`.)
 
 ## 1. Проект из GitHub
 
-1. Откройте [New project → GitHub](https://railway.com/new/github) и выберите репозиторий с Agro ERP.
-2. Railway создаст сервис с деплоем из ветки по умолчанию; при необходимости в настройках сервиса укажите ветку **`main`**.
+1. [New project → GitHub](https://railway.com/new/github) → репозиторий Agro ERP.
+2. При необходимости в сервисе укажите ветку **`main`**.
 
 ## 2. База данных с PostGIS
 
-Приложению нужны расширения **PostGIS** и **pgcrypto** (см. миграции `001_init_extensions.sql`).
+Нужны **PostGIS** и **pgcrypto** (см. `backend/migrations/001_init_extensions.sql`).
 
-Обычный шаблон **PostgreSQL** на Railway **не содержит** PostGIS. Удобнее добавить сервис из шаблона с PostGIS, например:
+Обычный **PostgreSQL** на Railway без PostGIS часто **не подходит**. Добавьте шаблон с PostGIS, например [PG 17 + PostGIS](https://railway.com/deploy/postgis-17).
 
-- [Deploy PG 17 + PostGIS](https://railway.com/deploy/postgis-17) или аналог «PostGIS» в каталоге шаблонов Railway.
+В сервисе **приложения** → **Variables** → **`DATABASE_URL`** → **Reference** на сервис БД → **`DATABASE_URL`**. Подробнее: [Variables](https://docs.railway.com/guides/variables).
 
-После создания БД в сервисе **приложения** (Node) в **Variables** добавьте ссылку на строку подключения:
+## 3. Переменные (сервис приложения)
 
-- **Variable** `DATABASE_URL` → **Add Reference** → сервис Postgres/PostGIS → переменная **`DATABASE_URL`** (или `DATABASE_PUBLIC_URL`, если подключаетесь снаружи Railway — для одного сервиса внутри проекта обычно достаточно внутреннего URL).
+| Переменная | Обязательно | Значение |
+|------------|-------------|----------|
+| `DATABASE_URL` | да | Reference на Postgres/PostGIS |
+| `JWT_SECRET` | да | ≥ **32** символов |
+| `NODE_ENV` | да | `production` |
+| `VITE_API_URL` | да | `/api` (для сборки фронта) |
+| `APP_ORIGIN` | нет | Если **не** задать, backend подставит **`https://` + `RAILWAY_PUBLIC_DOMAIN`** (Railway добавляет переменную сам). Свой домен — задайте `APP_ORIGIN` вручную. |
 
-Документация по переменным и ссылкам между сервисами: [Variables](https://docs.railway.com/guides/variables).
+`PORT` задаёт Railway — backend его читает.
 
-## 3. Переменные окружения (сервис приложения)
-
-| Переменная | Значение |
-|------------|----------|
-| `NODE_ENV` | `production` |
-| `JWT_SECRET` | Случайная строка **не короче 32 символов** |
-| `VITE_API_URL` | `/api` (нужна при **build** фронта) |
-| `DATABASE_URL` | Ссылка на БД (см. выше) |
-| `APP_ORIGIN` | Публичный URL сервиса после первого деплоя, например `https://ваш-сервис.up.railway.app` (**без** слэша в конце). После смены домена обновите и сделайте redeploy. |
-
-Railway подставляет **`PORT`** сам — backend уже читает его из окружения.
-
-## 4. Сборка и старт
-
-Задаются в **`railway.json`**:
+## 4. Сборка и старт (`railway.json`)
 
 - **Build:** `npm install && npm run install:all && npm run build`
-- **Start:** `NODE_ENV=production npm run start --prefix backend`
-- **Pre-deploy:** `npm run migrate --prefix backend` (одна строка в массиве). Убедитесь, что у **этого же** сервиса в Variables есть **`DATABASE_URL`** (reference на Postgres/PostGIS).
-
-Если первый деплой падает на **Pre-deploy**, откройте **View logs** у шага pre-deploy (там текст ошибки PostgreSQL / `DATABASE_URL` / Zod). Проверьте, что **`DATABASE_URL`** добавлен именно в сервис **приложения** (reference на БД). Временно можно **удалить** ключ `preDeployCommand` из `railway.json`, задеплоить, затем один раз в [Shell](https://docs.railway.com/guides/cli#shell): `npm run migrate --prefix backend`. Для самого `migrate.js` **реальный `JWT_SECRET` не обязателен**; для **API** задайте `JWT_SECRET` в Variables.
+- **Start:** `cd backend && NODE_ENV=production node src/server.js` (рабочий каталог `backend`, чтобы находился `../frontend/dist`)
 
 ## 5. Проверка
 
-- В логах после старта: `ERP backend запущен на порту …`
-- В браузере: `https://…/api/health` → `{"status":"ok"}`
-- Затем создайте администратора (см. корневой README / скрипты `create-admin`).
+1. Деплой **зелёный** → в Shell: `npm run migrate --prefix backend`.
+2. Логи: `ERP backend запущен на порту …`
+3. Браузер: `https://…/api/health` → `{"status":"ok"}`
+4. Администратор: см. README / `create-admin`.
 
-## 6. Полезные ссылки
+## 6. Ссылки
 
-- [Документация Railway](https://docs.railway.com/)
-- [PostgreSQL на Railway](https://docs.railway.com/databases/postgresql)
-- [Pre-deploy command](https://docs.railway.com/deployments/pre-deploy-command)
+- [Railway Docs](https://docs.railway.com/)
+- [Public networking / домены](https://docs.railway.com/guides/public-networking)
