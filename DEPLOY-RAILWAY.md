@@ -38,7 +38,7 @@ npm run migrate --prefix backend
 ## 4. Сборка и старт (`railway.json`)
 
 - **Build:** `npm install && npm run install:all && npm run build`
-- **Start:** `cd backend && NODE_ENV=production node src/server.js` (рабочий каталог `backend`, чтобы находился `../frontend/dist`)
+- **Start:** `NODE_ENV=production node backend/src/server.js` (из корня репозитория; путь к `frontend/dist` ищется от расположения `app.js`, не от `cwd`)
 
 ## 5. Проверка
 

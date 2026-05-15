@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -108,7 +109,10 @@ function resolveFrontendDistDir() {
   if (!isProduction) {
     return '';
   }
+  const srcDir = path.dirname(fileURLToPath(import.meta.url));
+  const fromRepoByFile = path.join(srcDir, '../../frontend/dist');
   const candidates = [
+    fromRepoByFile,
     path.resolve(process.cwd(), '../frontend/dist'),
     path.resolve(process.cwd(), 'frontend/dist'),
   ];
