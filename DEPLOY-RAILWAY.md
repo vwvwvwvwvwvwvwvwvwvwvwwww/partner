@@ -41,7 +41,7 @@ Railway подставляет **`PORT`** сам — backend уже читает
 - **Start:** `NODE_ENV=production npm run start --prefix backend`
 - **Pre-deploy:** `npm run migrate` (одна команда в массиве — [требование Railway](https://docs.railway.com/deployments/pre-deploy-command); задайте **`NODE_ENV=production`** в Variables сервиса, чтобы совпадало со стартом).
 
-Если первый деплой падает на **Pre-deploy** (например, до появления `DATABASE_URL` или из‑за расширений БД), временно уберите `preDeployCommand` из `railway.json` или выполните миграции один раз в [Railway Shell](https://docs.railway.com/guides/cli#shell), затем верните конфиг.
+Если первый деплой падает на **Pre-deploy** (например, до появления `DATABASE_URL` или из‑за расширений БД), временно уберите `preDeployCommand` из `railway.json` или выполните миграции один раз в [Railway Shell](https://docs.railway.com/guides/cli#shell), затем верните конфиг. Для самого скрипта `migrate.js` **реальный `JWT_SECRET` не обязателен** (в коде подставляется плейсхолдер только на время миграции); для **работы API** по-прежнему задайте `JWT_SECRET` в Variables.
 
 ## 5. Проверка
 

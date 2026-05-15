@@ -33,6 +33,18 @@ function applyFromDatabaseUrl() {
 
 applyFromDatabaseUrl();
 
+/** Скрипт миграций не использует JWT; в pre-deploy (Railway и др.) JWT_SECRET часто не задан — не блокируем migrate. */
+const MIGRATE_JWT_PLACEHOLDER = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+function isMigrateCli() {
+  const p = (process.argv[1] ?? '').replace(/\\/g, '/');
+  return p.endsWith('src/scripts/migrate.js') || p.endsWith('/scripts/migrate.js');
+}
+
+if (isMigrateCli() && (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 32)) {
+  process.env.JWT_SECRET = MIGRATE_JWT_PLACEHOLDER;
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(4010),
