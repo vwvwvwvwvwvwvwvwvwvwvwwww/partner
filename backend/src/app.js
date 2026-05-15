@@ -27,6 +27,11 @@ if (isProduction) {
   app.set('trust proxy', 1);
 }
 
+/** До helmet/CORS/rate-limit: Railway healthcheck и мониторинги не должны ловить 403/429/CORS. */
+const healthPayload = { status: 'ok' };
+app.get('/api/health', (req, res) => res.json(healthPayload));
+app.get('/health', (req, res) => res.json(healthPayload));
+
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
@@ -48,6 +53,15 @@ app.use(
 
       if (origin === env.APP_ORIGIN) {
         return callback(null, true);
+      }
+
+      /** Railway шлёт healthcheck с домена healthcheck.railway.app (см. docs.railway.com/deployments/healthchecks). */
+      try {
+        if (/healthcheck\.railway\.app$/i.test(new URL(origin).hostname)) {
+          return callback(null, true);
+        }
+      } catch {
+        /* невалидный Origin */
       }
 
       const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
@@ -73,10 +87,6 @@ app.use(
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-
-app.get('/api/health', (req, res) => {
-  return res.json({ status: 'ok' });
-});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);

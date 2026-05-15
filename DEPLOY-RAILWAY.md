@@ -1,6 +1,6 @@
 # Деплой на [Railway](https://railway.com) (из GitHub)
 
-В корне репозитория **`railway.json`**: сборка фронта, старт из каталога `backend/`, `healthcheck` на `/api/health`. Конфиг: [Config as Code](https://docs.railway.com/reference/config-as-code).
+В корне репозитория **`railway.json`**: сборка фронта, старт из каталога `backend/`, `healthcheck` на **`/health`** (дублируется **`/api/health`**). Конфиг: [Config as Code](https://docs.railway.com/reference/config-as-code).
 
 **Миграции БД** в `railway.json` **не запускаются автоматически** (чтобы деплой не падал на pre-deploy). Один раз после первого успешного деплоя выполните в [Shell](https://docs.railway.com/guides/cli#shell) сервиса приложения из **корня репозитория**:
 
@@ -44,7 +44,7 @@ npm run migrate --prefix backend
 
 1. Деплой **зелёный** → в Shell: `npm run migrate --prefix backend`.
 2. Логи: `ERP backend запущен на порту …`
-3. Браузер: `https://…/api/health` → `{"status":"ok"}`
+3. Браузер: `https://…/health` или `…/api/health` → `{"status":"ok"}`
 4. Администратор: см. README / `create-admin`.
 
 ## 6. Ссылки
